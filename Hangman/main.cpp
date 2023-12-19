@@ -1,246 +1,258 @@
 ﻿#include <SFML/Graphics.hpp>
-#include <string>
 #include <iostream>
-
-const int MAX_TRIES = 6;
+#include <ctime>
+#include <cstring>
 
 class Hangman {
 public:
-    Hangman(const std::string& word) : secretWord(word), guessedWord(word.length(), '_'), wrongTries(0) {}
+    Hangman() {
+        srand(static_cast<unsigned int>(time(nullptr)));
+        const char* word_list[5] = { "AIRPLANE", "PROGRAMMING", "YOUTUBE", "GAME", "HANGMAN" };
+        random_word_index = rand() % 5;
+        word_len = strlen(word_list[random_word_index]);
+        lives = 3;
 
-    bool guess(char letter) {
-        bool found = false;
-        for (size_t i = 0; i < secretWord.length(); i++) {
-            if (secretWord[i] == letter) {
-                guessedWord[i] = letter;
-                found = true;
-            }
+        strcpy_s(word, word_list[random_word_index]);
+        for (unsigned short i = 0; i < word_len; i++) {
+            word[i] = '_';
         }
-        if (!found) {
-            wrongTries++;
-        }
-        return found;
-    }
-
-    bool isGameOver() const {
-        return wrongTries >= MAX_TRIES || guessedWord == secretWord;
-    }
-
-    bool isWin() const {
-        return guessedWord == secretWord;
-    }
-
-    int getWrongTries() const {
-        return wrongTries;
-    }
-
-    const std::string& getGuessedWord() const {
-        return guessedWord;
-    }
-
-private:
-    std::string secretWord;
-    std::string guessedWord;
-    int wrongTries;
-};
-
-class Level {
-public:
-    enum class Difficulty { Easy, Medium, Hard };
-    Level(Difficulty difficulty) : difficulty(difficulty) {}
-
-    Difficulty getDifficulty() const {
-        return difficulty;
-    }
-
-    
-
-private:
-    Difficulty difficulty;
-};
-
-class Interface {
-public:
-    Interface() : window(sf::VideoMode(512, 512), "Hangman"), currentLevel(Level::Difficulty::Easy), hangmanGame(nullptr) {
-        if (!initResources()) {
-            throw std::runtime_error("Failed to load resources");
-        }
-        setupUI();
-    }
-
-    ~Interface() {
-        delete hangmanGame;
-    }
-
-    void run() {
-        while (window.isOpen()) {
-            processEvents();
-            render();
-        }
-    }
-
-private:
-    sf::RenderWindow window;
-    sf::Font font;
-    sf::Texture backgroundTexture;
-    sf::Sprite background;
-    sf::Text playButton, levelButton, exitButton;
-    sf::Text easyButton, mediumButton, hardButton;
-    sf::Text guessedWordText;
-    bool showLevelOptions = false;
-    Level currentLevel;
-    Hangman* hangmanGame;
-
-    bool initResources() {
-        if (!backgroundTexture.loadFromFile("D:\\KSE\\paradigm\\Hangman c++\\Hangman\\Hangman\\photo_2023-12-18_09-59-18.jpg")) {
-            return false;
-        }
-        background.setTexture(backgroundTexture);
-        background.setScale(float(window.getSize().x) / backgroundTexture.getSize().x, float(window.getSize().y) / backgroundTexture.getSize().y);
 
         if (!font.loadFromFile("D:\\KSE\\paradigm\\sfm\\Project1\\Boomboom.otf")) {
-            return false;
+            std::cerr << "Error loading font" << std::endl;
+            // Handle font loading error if necessary
         }
 
-        return true;
+        text.setFont(font);
+        text.setCharacterSize(30);
+        text.setFillColor(sf::Color::White);
+        text.setPosition(50.f, 50.f);
     }
 
-    void setupUI() {
-        playButton.setFont(font);
-        playButton.setString("Play");
-        playButton.setCharacterSize(24);
-        playButton.setFillColor(sf::Color::Black);
-        playButton.setPosition(400, 50);
-
-        levelButton.setFont(font);
-        levelButton.setString("Level");
-        levelButton.setCharacterSize(24);
-        levelButton.setFillColor(sf::Color::Black);
-        levelButton.setPosition(400, 100);
-
-        exitButton.setFont(font);
-        exitButton.setString("Exit");
-        exitButton.setCharacterSize(24);
-        exitButton.setFillColor(sf::Color::Black);
-        exitButton.setPosition(400, 150);
-
-        easyButton.setFont(font);
-        easyButton.setString("Easy");
-        easyButton.setCharacterSize(20);
-        easyButton.setFillColor(sf::Color::Green);
-        easyButton.setPosition(400, 200);
-
-        mediumButton.setFont(font);
-        mediumButton.setString("Medium");
-        mediumButton.setCharacterSize(20);
-        mediumButton.setFillColor(sf::Color::Yellow);
-        mediumButton.setPosition(400, 250);
-
-        hardButton.setFont(font);
-        hardButton.setString("Hard");
-        hardButton.setCharacterSize(20);
-        hardButton.setFillColor(sf::Color::Red);
-        hardButton.setPosition(400, 300);
-
-        guessedWordText.setFont(font);
-        guessedWordText.setCharacterSize(24);
-        guessedWordText.setFillColor(sf::Color::White);
-        guessedWordText.setPosition(50, 550);
+    void runGame(sf::RenderWindow& window) {
+        while (window.isOpen()) {
+            handleEvents(window);
+            update(window);
+            render(window);
+        }
     }
 
-    void resetGame() {
-        delete hangmanGame;
-        hangmanGame = new Hangman("EXAMPLE"); 
+private:
+    unsigned short random_word_index;
+    unsigned short word_len;
+    unsigned short lives;
+    char word[50];
+    bool letter_found;
+
+    const char* word_list[5] = { "AIRPLANE", "PROGRAMMING", "YOUTUBE", "GAME", "HANGMAN" };
+
+    sf::Font font;
+    sf::Text text;
+
+    void AddLetter(char letter) {
+        letter = static_cast<char>(toupper(static_cast<int>(letter)));
+        for (unsigned short i = 0; i < word_len; i++) {
+            if (letter == word[i])
+                word[i] = letter, letter_found = true;
+        }
     }
 
-    void processEvents() {
+    bool WordFound() {
+        return strcmp(word, word_list[random_word_index]) == 0;
+    }
+
+    void handleEvents(sf::RenderWindow& window) {
         sf::Event event;
         while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
+            if (event.type == sf::Event::Closed)
                 window.close();
-            }
-
-            if (event.type == sf::Event::MouseButtonPressed) {
-                handleMouseEvents(event.mouseButton);
-            }
-
             if (event.type == sf::Event::TextEntered) {
-                if (hangmanGame && event.text.unicode < 128) {
+                if (event.text.unicode < 128) {
+                    letter_found = false;
                     char enteredChar = static_cast<char>(event.text.unicode);
-                    hangmanGame->guess(enteredChar);
-
-                    if (hangmanGame->isGameOver()) {
-                        
+                    AddLetter(enteredChar);
+                    if (!letter_found) {
+                        lives--;
+                    }
+                    if (WordFound()) {
+                        text.setString("You have found the word!\n" + std::string(word));
+                        window.draw(text);
+                        window.display();
+                        sf::sleep(sf::seconds(5));
+                        window.close();
+                    }
+                    if (lives == 0) {
+                        text.setString("You ran out of lives.\nThe word was: " + std::string(word_list[random_word_index]));
+                        window.draw(text);
+                        window.display();
+                        sf::sleep(sf::seconds(5));
+                        window.close();
                     }
                 }
             }
         }
     }
 
-    void handleMouseEvents(const sf::Event::MouseButtonEvent& mouseEvent) {
-        if (showLevelOptions) {
-            if (easyButton.getGlobalBounds().contains(window.mapPixelToCoords(sf::Vector2i(mouseEvent.x, mouseEvent.y)))) {
-                currentLevel = Level(Level::Difficulty::Easy);
-                showLevelOptions = false;
-            }
-            else if (mediumButton.getGlobalBounds().contains(window.mapPixelToCoords(sf::Vector2i(mouseEvent.x, mouseEvent.y)))) {
-                currentLevel = Level(Level::Difficulty::Medium);
-                showLevelOptions = false;
-            }
-            else if (hardButton.getGlobalBounds().contains(window.mapPixelToCoords(sf::Vector2i(mouseEvent.x, mouseEvent.y)))) {
-                currentLevel = Level(Level::Difficulty::Hard);
-                showLevelOptions = false;
-            }
-        }
-        else {
-            if (playButton.getGlobalBounds().contains(window.mapPixelToCoords(sf::Vector2i(mouseEvent.x, mouseEvent.y)))) {
-                resetGame();
-            }
-            else if (levelButton.getGlobalBounds().contains(window.mapPixelToCoords(sf::Vector2i(mouseEvent.x, mouseEvent.y)))) {
-                showLevelOptions = true;
-            }
-            else if (exitButton.getGlobalBounds().contains(window.mapPixelToCoords(sf::Vector2i(mouseEvent.x, mouseEvent.y)))) {
-                window.close();
-            }
-        }
-    
+    void update(sf::RenderWindow& window) {
+        // Add any additional game logic update if needed
     }
 
-    void render() {
+    void render(sf::RenderWindow& window) {
         window.clear();
-        window.draw(background);
-
-        if (!showLevelOptions) {
-            window.draw(playButton);
-            window.draw(levelButton);
-            window.draw(exitButton);
-        }
-        else {
-            window.draw(easyButton);
-            window.draw(mediumButton);
-            window.draw(hardButton);
-        }
-
-        if (hangmanGame) {
-            guessedWordText.setString(hangmanGame->getGuessedWord());
-            window.draw(guessedWordText);
-        }
-
+        text.setString(std::string(word));
+        window.draw(text);
         window.display();
     }
 };
 
+class Interface {
+public:
+    Interface() {
+        window.create(sf::VideoMode(800, 600), "Hangman Menu");
+        window.setFramerateLimit(60);
+
+        if (!backgroundTexture.loadFromFile("D:\\KSE\\paradigm\\Hangman c++\\Hangman\\Hangman\\photo_2023-12-18_09-59-18.jpg")) {
+            std::cerr << "Error loading background image" << std::endl;
+        }
+        background.setTexture(backgroundTexture);
+        updateBackgroundScale();
+
+        if (!font.loadFromFile("D:\\KSE\\paradigm\\sfm\\Project1\\Boomboom.otf")) {
+            std::cerr << "Error loading font" << std::endl;
+        }
+
+        initTextAndButtons();
+        updateTitlePosition();
+    }
+
+    void run() {
+        while (window.isOpen()) {
+            handleEvents();
+            update();
+            render();
+        }
+    }
+
+private:
+    sf::RenderWindow window;
+    sf::Texture backgroundTexture;
+    sf::Sprite background;
+    sf::Font font;
+    sf::Text playButton;
+    sf::Text levelButton;
+    sf::Text exitButton;
+    sf::Text titleText;
+
+    void initTextAndButtons() {
+        playButton.setString("Play");
+        levelButton.setString("Choose Level");
+        exitButton.setString("Exit");
+
+        playButton.setFont(font);
+        levelButton.setFont(font);
+        exitButton.setFont(font);
+
+        playButton.setCharacterSize(30);
+        levelButton.setCharacterSize(30);
+        exitButton.setCharacterSize(30);
+
+        playButton.setPosition(600, 200);
+        levelButton.setPosition(600, 250);
+        exitButton.setPosition(600, 300);
+
+        
+        playButton.setFillColor(sf::Color::Black);
+        levelButton.setFillColor(sf::Color::Black);  
+        exitButton.setFillColor(sf::Color::Black);  
+
+        titleText.setString("Hangman Game");
+        titleText.setFont(font);
+        titleText.setCharacterSize(50);
+        titleText.setFillColor(sf::Color::Black);
+        
+        
+    
+    }
+
+    void handleEvents() {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            switch (event.type) {
+            case sf::Event::Closed:
+                window.close();
+                break;
+            case sf::Event::MouseButtonPressed:
+                handleMouseClick(event.mouseButton.x, event.mouseButton.y);
+                break;
+            case sf::Event::Resized:
+                updateTitlePosition();
+                updateBackgroundScale();
+                break;
+            }
+        }
+    }
+
+    void handleMouseClick(int mouseX, int mouseY) {
+        if (playButton.getGlobalBounds().contains(mouseX, mouseY)) {
+            Hangman hangmanGame;
+            hangmanGame.runGame(window);
+        }
+        else if (levelButton.getGlobalBounds().contains(mouseX, mouseY)) {
+            // Add logic for level selection
+        }
+        else if (exitButton.getGlobalBounds().contains(mouseX, mouseY)) {
+            window.close();
+        }
+    }
+
+    void update() {
+        float speed = 1.0f; // Задайте швидкість руху тексту
+
+        // Отримайте поточні координати тексту
+        sf::Vector2f currentPosition = titleText.getPosition();
+
+        // Змініть x-координату тексту, щоб він рухався вліво
+        currentPosition.x -= speed;
+
+        // Якщо текст вийшов за лівий край вікна, перемістіть його назад на правий край
+        if (currentPosition.x + titleText.getGlobalBounds().width < 0) {
+            currentPosition.x = window.getSize().x;
+        }
+
+        // Встановіть нові координати для тексту
+        titleText.setPosition(currentPosition);
+
+        // Додайте будь-які інші оновлення, які вам можуть знадобитися
+    }
+
+
+    void render() {
+        window.clear();
+        window.draw(background);
+        window.draw(titleText);
+        window.draw(playButton);
+        window.draw(levelButton);
+        window.draw(exitButton);
+        window.display();
+    }
+
+    void updateTitlePosition() {
+        // Calculate new position of the title relative to the window
+        titleText.setPosition((window.getSize().x - titleText.getGlobalBounds().width) / 2, 50.f);
+    }
+
+    void updateBackgroundScale() {
+        // Scale the background image to fit the window size
+        background.setScale(
+            static_cast<float>(window.getSize().x) / backgroundTexture.getSize().x,
+            static_cast<float>(window.getSize().y) / backgroundTexture.getSize().y
+        );
+    }
+};
+
+
 int main() {
-    try {
-        Interface interface;
-        interface.run();
-    }
-    catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
-    }
+    Interface interface;
+    interface.run();
 
     return 0;
 }
-
-                       
