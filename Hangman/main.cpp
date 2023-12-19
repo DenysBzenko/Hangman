@@ -43,21 +43,21 @@ public:
             lives = 3;
 
             strcpy_s(word, wordList);
-            for (unsigned short i = 0; i < word_len; i++) {
-                word[i] = '_';
-            }
 
             if (!font.loadFromFile("D:\\KSE\\paradigm\\sfm\\Project1\\Boomboom.otf")) {
                 std::cerr << "Error loading font" << std::endl;
-                
             }
 
             text.setFont(font);
             text.setCharacterSize(30);
             text.setFillColor(sf::Color::White);
             text.setPosition(50.f, 50.f);
+
+            // Initialize the displayed word with underscores
+            displayWord = std::string(word_len, '_');
         }
     }
+
 
     void runGame(sf::RenderWindow& window) {
         while (window.isOpen()) {
@@ -71,6 +71,7 @@ private:
     unsigned short random_word_index;
     unsigned short word_len;
     unsigned short lives;
+    std::string displayWord;
     char word[50];
     bool letter_found;
 
@@ -80,10 +81,13 @@ private:
     void AddLetter(char letter) {
         letter = static_cast<char>(toupper(static_cast<int>(letter)));
         for (unsigned short i = 0; i < word_len; i++) {
-            if (letter == word[i])
-                word[i] = letter, letter_found = true;
+            if (letter == word[i]) {
+                displayWord[i] = letter;
+                letter_found = true;
+            }
         }
     }
+
 
     bool WordFound() {
         return strcmp(word, WordList::getWordsForLevel(1)) == 0;
@@ -127,10 +131,14 @@ private:
 
     void render(sf::RenderWindow& window) {
         window.clear();
-        text.setString(std::string(word));
+
+        // Display the guessed letters and underscores
+        text.setString(displayWord);
         window.draw(text);
+
         window.display();
     }
+
 };
 
 class Interface {
