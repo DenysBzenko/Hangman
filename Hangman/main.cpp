@@ -1,49 +1,48 @@
 ﻿#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <ctime>
-#include <cstring>
+#include <cstdlib>
+#include <vector>
 
 class WordList {
 public:
-    static const char* getWordsForLevel(int level) {
-        switch (level) {
-        case 1:
-            return easyWords[rand() % easyWordCount];
-        case 2:
-            return mediumWords[rand() % mediumWordCount];
-        case 3:
-            return hardWords[rand() % hardWordCount];
-        default:
-            return nullptr;
+    static std::string getWordsForLevel(int level) {
+        const std::vector<std::string>& words = getWordList(level);
+        if (!words.empty()) {
+            return words[rand() % words.size()];
         }
+        return "";
     }
 
-    static const int easyWordCount = 5;
-    static const int mediumWordCount = 5;
-    static const int hardWordCount = 5;
-
 private:
-    static const char* easyWords[];
-    static const char* mediumWords[];
-    static const char* hardWords[];
-};
+    static const std::vector<std::string>& getWordList(int level) {
+        static const std::vector<std::string> easyWords = { "CAT", "DOG", "SUN", "MILK", "FISH" };
+        static const std::vector<std::string> mediumWords = { "APPLE", "TIGER", "HORSE", "CHAIR", "PHONE" };
+        static const std::vector<std::string> hardWords = { "COMPUTER", "ELEPHANT", "JUPITER", "UNIVERSE", "SYMPHONY" };
 
-const char* WordList::easyWords[] = { "CAT", "DOG", "SUN", "MILK", "FISH" };
-const char* WordList::mediumWords[] = { "APPLE", "TIGER", "HORSE", "CHAIR", "PHONE" };
-const char* WordList::hardWords[] = { "COMPUTER", "ELEPHANT", "JUPITER", "UNIVERSE", "SYMPHONY" };
+        switch (level) {
+        case 1:
+            return easyWords;
+        case 2:
+            return mediumWords;
+        case 3:
+            return hardWords;
+        default:
+            static const std::vector<std::string> emptyList;
+            return emptyList;
+        }
+    }
+};
 
 class Hangman {
 public:
     Hangman(int level) {
         srand(static_cast<unsigned int>(time(nullptr)));
-        const char* wordList = WordList::getWordsForLevel(level);  
-        if (wordList) {
-            word_len = strlen(wordList);
+        std::string wordList = WordList::getWordsForLevel(level);
+        if (!wordList.empty()) {
+            word_len = wordList.length();
             lives = 7;
-
-            strcpy_s(word, wordList);
-
-            strcpy_s(word, wordList);
+            word = wordList;
 
             if (!font.loadFromFile("D:\\KSE\\paradigm\\sfm\\Project1\\Boomboom.otf")) {
                 std::cerr << "Error loading font" << std::endl;
@@ -54,7 +53,6 @@ public:
             text.setFillColor(sf::Color::White);
             text.setPosition(50.f, 50.f);
 
-            // Initialize the displayed word with underscores
             displayWord = std::string(word_len, '_');
             gameWon = false;
         }
@@ -71,7 +69,6 @@ public:
                 window.draw(text);
                 window.display();
 
-                // Handle restart option
                 sf::Event event;
                 while (window.pollEvent(event)) {
                     if (event.type == sf::Event::Closed)
@@ -84,11 +81,10 @@ public:
     }
 
 private:
-    unsigned short random_word_index;
     unsigned short word_len;
     unsigned short lives;
     std::string displayWord;
-    char word[50];
+    std::string word;
     bool letter_found;
     bool gameWon;
 
@@ -123,14 +119,14 @@ private:
                         lives--;
                     }
                     if (WordFound()) {
-                        text.setString("You have found the word!\n" + std::string(word));
+                        text.setString("You have found the word!\n" + word);
                         window.draw(text);
                         window.display();
                         sf::sleep(sf::seconds(2));
                         gameWon = true;
                     }
                     if (lives == 0) {
-                        text.setString("You ran out of lives.\nThe word was: " + std::string(WordList::getWordsForLevel(1)));
+                        text.setString("You ran out of lives.\nThe word was: " + word);
                         window.draw(text);
                         window.display();
                         sf::sleep(sf::seconds(2));
@@ -142,7 +138,7 @@ private:
     }
 
     void update(sf::RenderWindow& window) {
-        // Any additional game logic can be added here
+        // Perform any necessary update logic here
     }
 
     void render(sf::RenderWindow& window) {
@@ -153,12 +149,11 @@ private:
     }
 
     void Restart() {
-        lives = 3;
+        lives = 7;
         gameWon = false;
-        const char* wordList = WordList::getWordsForLevel(1);
-        random_word_index = rand() % WordList::easyWordCount;
-        word_len = strlen(wordList);
-        strcpy_s(word, wordList);
+        const std::string& wordList = WordList::getWordsForLevel(1);
+        word_len = wordList.length();
+        word = wordList;
         displayWord = std::string(word_len, '_');
     }
 };
