@@ -3,29 +3,60 @@
 #include <ctime>
 #include <cstring>
 
+class WordList {
+public:
+    static const char* getWordsForLevel(int level) {
+        switch (level) {
+        case 1:
+            return easyWords[rand() % easyWordCount];
+        case 2:
+            return mediumWords[rand() % mediumWordCount];
+        case 3:
+            return hardWords[rand() % hardWordCount];
+        default:
+            return nullptr;
+        }
+    }
+
+    static const int easyWordCount = 5;
+    static const int mediumWordCount = 5;
+    static const int hardWordCount = 5;
+
+private:
+    static const char* easyWords[];
+    static const char* mediumWords[];
+    static const char* hardWords[];
+};
+
+const char* WordList::easyWords[] = { "CAT", "DOG", "SUN", "MILK", "FISH" };
+const char* WordList::mediumWords[] = { "APPLE", "TIGER", "HORSE", "CHAIR", "PHONE" };
+const char* WordList::hardWords[] = { "COMPUTER", "ELEPHANT", "JUPITER", "UNIVERSE", "SYMPHONY" };
+
 class Hangman {
 public:
-    Hangman() {
+    Hangman(int level) {
         srand(static_cast<unsigned int>(time(nullptr)));
-        const char* word_list[5] = { "AIRPLANE", "PROGRAMMING", "YOUTUBE", "GAME", "HANGMAN" };
-        random_word_index = rand() % 5;
-        word_len = strlen(word_list[random_word_index]);
-        lives = 3;
+        const char* wordList = WordList::getWordsForLevel(level);
+        if (wordList) {
+            random_word_index = rand() % WordList::easyWordCount;
+            word_len = strlen(wordList);
+            lives = 3;
 
-        strcpy_s(word, word_list[random_word_index]);
-        for (unsigned short i = 0; i < word_len; i++) {
-            word[i] = '_';
+            strcpy_s(word, wordList);
+            for (unsigned short i = 0; i < word_len; i++) {
+                word[i] = '_';
+            }
+
+            if (!font.loadFromFile("D:\\KSE\\paradigm\\sfm\\Project1\\Boomboom.otf")) {
+                std::cerr << "Error loading font" << std::endl;
+                
+            }
+
+            text.setFont(font);
+            text.setCharacterSize(30);
+            text.setFillColor(sf::Color::White);
+            text.setPosition(50.f, 50.f);
         }
-
-        if (!font.loadFromFile("D:\\KSE\\paradigm\\sfm\\Project1\\Boomboom.otf")) {
-            std::cerr << "Error loading font" << std::endl;
-            // Handle font loading error if necessary
-        }
-
-        text.setFont(font);
-        text.setCharacterSize(30);
-        text.setFillColor(sf::Color::White);
-        text.setPosition(50.f, 50.f);
     }
 
     void runGame(sf::RenderWindow& window) {
@@ -43,8 +74,6 @@ private:
     char word[50];
     bool letter_found;
 
-    const char* word_list[5] = { "AIRPLANE", "PROGRAMMING", "YOUTUBE", "GAME", "HANGMAN" };
-
     sf::Font font;
     sf::Text text;
 
@@ -57,7 +86,7 @@ private:
     }
 
     bool WordFound() {
-        return strcmp(word, word_list[random_word_index]) == 0;
+        return strcmp(word, WordList::getWordsForLevel(1)) == 0;
     }
 
     void handleEvents(sf::RenderWindow& window) {
@@ -81,7 +110,7 @@ private:
                         window.close();
                     }
                     if (lives == 0) {
-                        text.setString("You ran out of lives.\nThe word was: " + std::string(word_list[random_word_index]));
+                        text.setString("You ran out of lives.\nThe word was: " + std::string(WordList::getWordsForLevel(1)));
                         window.draw(text);
                         window.display();
                         sf::sleep(sf::seconds(5));
@@ -93,7 +122,7 @@ private:
     }
 
     void update(sf::RenderWindow& window) {
-       
+
     }
 
     void render(sf::RenderWindow& window) {
@@ -103,8 +132,6 @@ private:
         window.display();
     }
 };
-
-
 
 class Interface {
 public:
@@ -146,6 +173,7 @@ private:
     sf::Text easyButton, mediumButton, hardButton;
 
     bool levelSelectionActive;
+    int selectedLevel;
 
     void initTextAndButtons() {
         playButton.setString("Play");
@@ -192,6 +220,7 @@ private:
         hardButton.setPosition(400, 300);
 
         levelSelectionActive = false;
+        selectedLevel = 1;
     }
 
     void handleEvents() {
@@ -214,7 +243,7 @@ private:
 
     void handleMouseClick(int mouseX, int mouseY) {
         if (playButton.getGlobalBounds().contains(mouseX, mouseY)) {
-            Hangman hangmanGame;
+            Hangman hangmanGame(selectedLevel);
             hangmanGame.runGame(window);
         }
         else if (levelButton.getGlobalBounds().contains(mouseX, mouseY)) {
@@ -231,17 +260,17 @@ private:
 
     void handleLevelSelectionClick(int mouseX, int mouseY) {
         if (easyButton.getGlobalBounds().contains(mouseX, mouseY)) {
-            // Handle selection of Easy level
+            selectedLevel = 1;
             levelSelectionActive = false;
             toggleButtonsVisibility(true);
         }
         else if (mediumButton.getGlobalBounds().contains(mouseX, mouseY)) {
-            // Handle selection of Medium level
+            selectedLevel = 2;
             levelSelectionActive = false;
             toggleButtonsVisibility(true);
         }
         else if (hardButton.getGlobalBounds().contains(mouseX, mouseY)) {
-            // Handle selection of Hard level
+            selectedLevel = 3;
             levelSelectionActive = false;
             toggleButtonsVisibility(true);
         }
@@ -295,8 +324,6 @@ private:
         exitButton.setFillColor(isVisible ? sf::Color::Black : sf::Color::Transparent);
     }
 };
-
-
 
 int main() {
     Interface interface;
