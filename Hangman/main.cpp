@@ -36,11 +36,12 @@ class Hangman {
 public:
     Hangman(int level) {
         srand(static_cast<unsigned int>(time(nullptr)));
-        const char* wordList = WordList::getWordsForLevel(level);
+        const char* wordList = WordList::getWordsForLevel(level);  
         if (wordList) {
-            random_word_index = rand() % WordList::easyWordCount;
             word_len = strlen(wordList);
-            lives = 3;
+            lives = 7;
+
+            strcpy_s(word, wordList);
 
             strcpy_s(word, wordList);
 
