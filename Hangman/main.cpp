@@ -55,15 +55,30 @@ public:
 
             // Initialize the displayed word with underscores
             displayWord = std::string(word_len, '_');
+            gameWon = false;
         }
     }
-
 
     void runGame(sf::RenderWindow& window) {
         while (window.isOpen()) {
             handleEvents(window);
             update(window);
             render(window);
+
+            if (gameWon) {
+                text.setString("Congratulations! You have won!\nPress 'R' to restart.");
+                window.draw(text);
+                window.display();
+
+                // Handle restart option
+                sf::Event event;
+                while (window.pollEvent(event)) {
+                    if (event.type == sf::Event::Closed)
+                        window.close();
+                    else if (event.type == sf::Event::TextEntered && event.text.unicode == 'R')
+                        Restart();
+                }
+            }
         }
     }
 
@@ -74,6 +89,7 @@ private:
     std::string displayWord;
     char word[50];
     bool letter_found;
+    bool gameWon;
 
     sf::Font font;
     sf::Text text;
@@ -88,9 +104,8 @@ private:
         }
     }
 
-
     bool WordFound() {
-        return strcmp(word, WordList::getWordsForLevel(1)) == 0;
+        return displayWord.find('_') == std::string::npos;
     }
 
     void handleEvents(sf::RenderWindow& window) {
@@ -110,14 +125,14 @@ private:
                         text.setString("You have found the word!\n" + std::string(word));
                         window.draw(text);
                         window.display();
-                        sf::sleep(sf::seconds(5));
-                        window.close();
+                        sf::sleep(sf::seconds(2));
+                        gameWon = true;
                     }
                     if (lives == 0) {
                         text.setString("You ran out of lives.\nThe word was: " + std::string(WordList::getWordsForLevel(1)));
                         window.draw(text);
                         window.display();
-                        sf::sleep(sf::seconds(5));
+                        sf::sleep(sf::seconds(2));
                         window.close();
                     }
                 }
@@ -126,19 +141,25 @@ private:
     }
 
     void update(sf::RenderWindow& window) {
-
+        // Any additional game logic can be added here
     }
 
     void render(sf::RenderWindow& window) {
         window.clear();
-
-        // Display the guessed letters and underscores
         text.setString(displayWord);
         window.draw(text);
-
         window.display();
     }
 
+    void Restart() {
+        lives = 3;
+        gameWon = false;
+        const char* wordList = WordList::getWordsForLevel(1);
+        random_word_index = rand() % WordList::easyWordCount;
+        word_len = strlen(wordList);
+        strcpy_s(word, wordList);
+        displayWord = std::string(word_len, '_');
+    }
 };
 
 class Interface {
