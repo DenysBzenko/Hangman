@@ -93,7 +93,7 @@ private:
     }
 
     void update(sf::RenderWindow& window) {
-        // Add any additional game logic update if needed
+       
     }
 
     void render(sf::RenderWindow& window) {
@@ -103,6 +103,8 @@ private:
         window.display();
     }
 };
+
+
 
 class Interface {
 public:
@@ -141,6 +143,9 @@ private:
     sf::Text levelButton;
     sf::Text exitButton;
     sf::Text titleText;
+    sf::Text easyButton, mediumButton, hardButton;
+
+    bool levelSelectionActive;
 
     void initTextAndButtons() {
         playButton.setString("Play");
@@ -159,18 +164,34 @@ private:
         levelButton.setPosition(600, 250);
         exitButton.setPosition(600, 300);
 
-        
         playButton.setFillColor(sf::Color::Black);
-        levelButton.setFillColor(sf::Color::Black);  
-        exitButton.setFillColor(sf::Color::Black);  
+        levelButton.setFillColor(sf::Color::Black);
+        exitButton.setFillColor(sf::Color::Black);
 
         titleText.setString("Hangman Game");
         titleText.setFont(font);
         titleText.setCharacterSize(50);
         titleText.setFillColor(sf::Color::Black);
-        
-        
-    
+
+        easyButton.setFont(font);
+        easyButton.setString("Easy");
+        easyButton.setCharacterSize(20);
+        easyButton.setFillColor(sf::Color::Green);
+        easyButton.setPosition(400, 200);
+
+        mediumButton.setFont(font);
+        mediumButton.setString("Medium");
+        mediumButton.setCharacterSize(20);
+        mediumButton.setFillColor(sf::Color::Yellow);
+        mediumButton.setPosition(400, 250);
+
+        hardButton.setFont(font);
+        hardButton.setString("Hard");
+        hardButton.setCharacterSize(20);
+        hardButton.setFillColor(sf::Color::Red);
+        hardButton.setPosition(400, 300);
+
+        levelSelectionActive = false;
     }
 
     void handleEvents() {
@@ -197,33 +218,48 @@ private:
             hangmanGame.runGame(window);
         }
         else if (levelButton.getGlobalBounds().contains(mouseX, mouseY)) {
-            // Add logic for level selection
+            levelSelectionActive = !levelSelectionActive;
+            toggleButtonsVisibility(!levelSelectionActive);
         }
         else if (exitButton.getGlobalBounds().contains(mouseX, mouseY)) {
             window.close();
         }
+        else if (levelSelectionActive) {
+            handleLevelSelectionClick(mouseX, mouseY);
+        }
+    }
+
+    void handleLevelSelectionClick(int mouseX, int mouseY) {
+        if (easyButton.getGlobalBounds().contains(mouseX, mouseY)) {
+            // Handle selection of Easy level
+            levelSelectionActive = false;
+            toggleButtonsVisibility(true);
+        }
+        else if (mediumButton.getGlobalBounds().contains(mouseX, mouseY)) {
+            // Handle selection of Medium level
+            levelSelectionActive = false;
+            toggleButtonsVisibility(true);
+        }
+        else if (hardButton.getGlobalBounds().contains(mouseX, mouseY)) {
+            // Handle selection of Hard level
+            levelSelectionActive = false;
+            toggleButtonsVisibility(true);
+        }
     }
 
     void update() {
-        float speed = 1.0f; // Задайте швидкість руху тексту
+        float speed = 1.0f;
 
-        // Отримайте поточні координати тексту
         sf::Vector2f currentPosition = titleText.getPosition();
 
-        // Змініть x-координату тексту, щоб він рухався вліво
         currentPosition.x -= speed;
 
-        // Якщо текст вийшов за лівий край вікна, перемістіть його назад на правий край
         if (currentPosition.x + titleText.getGlobalBounds().width < 0) {
             currentPosition.x = window.getSize().x;
         }
 
-        // Встановіть нові координати для тексту
         titleText.setPosition(currentPosition);
-
-        // Додайте будь-які інші оновлення, які вам можуть знадобитися
     }
-
 
     void render() {
         window.clear();
@@ -232,22 +268,34 @@ private:
         window.draw(playButton);
         window.draw(levelButton);
         window.draw(exitButton);
+
+        if (levelSelectionActive) {
+            window.draw(easyButton);
+            window.draw(mediumButton);
+            window.draw(hardButton);
+        }
+
         window.display();
     }
 
     void updateTitlePosition() {
-        // Calculate new position of the title relative to the window
         titleText.setPosition((window.getSize().x - titleText.getGlobalBounds().width) / 2, 50.f);
     }
 
     void updateBackgroundScale() {
-        // Scale the background image to fit the window size
         background.setScale(
             static_cast<float>(window.getSize().x) / backgroundTexture.getSize().x,
             static_cast<float>(window.getSize().y) / backgroundTexture.getSize().y
         );
     }
+
+    void toggleButtonsVisibility(bool isVisible) {
+        playButton.setFillColor(isVisible ? sf::Color::Black : sf::Color::Transparent);
+        levelButton.setFillColor(isVisible ? sf::Color::Black : sf::Color::Transparent);
+        exitButton.setFillColor(isVisible ? sf::Color::Black : sf::Color::Transparent);
+    }
 };
+
 
 
 int main() {
