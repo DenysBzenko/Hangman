@@ -140,11 +140,11 @@ private:
             }
 
             if (WordFound()) {
-                text.setString(L"You have found the word! 🎉\n" + sf::String::fromUtf32(word.begin(), word.end()));
+                text.setString(L"You have found the word!\n" + sf::String::fromUtf32(word.begin(), word.end()));
                 gameWon = true;
             }
             if (lives == 0) {
-                text.setString(L"You ran out of lives. 💔\nThe word was: " + sf::String::fromUtf32(word.begin(), word.end()));
+                text.setString(L"You ran out of lives.\nThe word was: " + sf::String::fromUtf32(word.begin(), word.end()));
                 window.close();
             }
         }
@@ -166,9 +166,6 @@ private:
                         letter_found = false;
                         char enteredChar = static_cast<char>(event.text.unicode);
                         AddLetter(enteredChar, window);
-                        if (!letter_found) {
-                            lives--;
-                        }
                         if (WordFound()) {
                             text.setString("You have found the word!\n" + word);
                             window.draw(text);
@@ -241,6 +238,7 @@ public:
 
         initTextAndButtons();
         updateTitlePosition();
+         initTextures();
     }
 
     void run() {
@@ -280,8 +278,15 @@ private:
             std::cerr << "Error loading Hard texture" << std::endl;
         }
 
+        easySprite.setTexture(easyTexture);  
+        mediumSprite.setTexture(mediumTexture);  
         hardSprite.setTexture(hardTexture);
+
+        easySprite.setScale(0.04f, 0.04F);
+        mediumSprite.setScale(0.04f, 0.04F);
+        hardSprite.setScale(0.04f, 0.04F);
     }
+
 
     void initTextAndButtons() {
         playButton.setString("Play");
